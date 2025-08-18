@@ -12,212 +12,351 @@
         body {
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
         }
-        /* 커스텀 스타일 추가 */
-        .timer-display {
-            font-weight: 900;
-            font-size: clamp(3rem, 15vw, 6rem);
-            letter-spacing: -0.05em;
-        }
         .subject-button {
             transition: all 0.2s ease-in-out;
         }
         .subject-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         .subject-button.active {
-            background-color: #0891b2; /* Tailwind cyan-600 */
+            background-color: #4f46e5; /* Tailwind indigo-600 */
             color: white;
             transform: translateY(0px);
             box-shadow: none;
         }
+        canvas {
+            width: 100%;
+            height: auto;
+            max-width: 400px;
+            aspect-ratio: 1 / 1;
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-2xl mx-auto bg-slate-800 rounded-2xl shadow-2xl p-6 md:p-8">
-        
-        <!-- 헤더 -->
-        <header class="text-center mb-6">
-            <h1 class="text-3xl md:text-4xl font-bold text-cyan-400">수능 모의고사 타이머</h1>
-            <p id="subject-display" class="text-slate-400 mt-2 text-lg h-7">과목을 선택하여 타이머를 시작하세요.</p>
-        </header>
+    <div class="w-full max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-4 md:p-8">
+        <div class="md:flex md:gap-8">
+            <!-- 좌측: 시계 및 디스플레이 -->
+            <div class="md:w-1/2 flex flex-col items-center justify-center p-4">
+                <header class="text-center mb-4 w-full relative">
+                    <h1 class="text-3xl md:text-4xl font-bold text-indigo-600">수능 모의고사 타이머</h1>
+                     <button id="mute-button" class="absolute top-1/2 right-0 -translate-y-1/2 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                        <!-- Speaker Icon SVG will be injected here by JS -->
+                    </button>
+                    <p id="subject-display" class="text-gray-500 mt-2 text-lg h-14 md:h-7">과목을 선택하여 타이머를 시작하세요.</p>
+                </header>
+                <canvas id="analog-clock"></canvas>
+                <div id="digital-display" class="text-center text-5xl font-mono tracking-tighter mt-4 text-gray-700 h-12"></div>
+            </div>
 
-        <!-- 타이머 디스플레이 -->
-        <div class="my-8 text-center">
-            <div id="time-display" class="timer-display text-slate-100">00:00:00</div>
-        </div>
+            <!-- 우측: 컨트롤 패널 -->
+            <div class="md:w-1/2 p-4 flex flex-col justify-center mt-8 md:mt-0">
+                <div id="subject-buttons-container" class="grid grid-cols-2 gap-3">
+                    <button data-id="korean" class="subject-button col-span-2 bg-gray-200 hover:bg-gray-300 p-3 rounded-lg">
+                        <span class="font-bold">1교시 국어</span><span class="block text-xs text-gray-600">08:40 ~ 10:00</span>
+                    </button>
+                    <button data-id="math" class="subject-button col-span-2 bg-gray-200 hover:bg-gray-300 p-3 rounded-lg">
+                        <span class="font-bold">2교시 수학</span><span class="block text-xs text-gray-600">10:30 ~ 12:10</span>
+                    </button>
+                    <button data-id="english" class="subject-button col-span-2 bg-gray-200 hover:bg-gray-300 p-3 rounded-lg">
+                        <span class="font-bold">3교시 영어</span><span class="block text-xs text-gray-600">13:10 ~ 14:20</span>
+                    </button>
+                    <button data-id="history" class="subject-button col-span-2 bg-gray-200 hover:bg-gray-300 p-3 rounded-lg">
+                        <span class="font-bold">4교시 한국사</span><span class="block text-xs text-gray-600">14:50 ~ 15:20</span>
+                    </button>
+                    <button data-id="inquiry1" class="subject-button bg-gray-200 hover:bg-gray-300 p-3 rounded-lg">
+                        <span class="font-bold">탐구 1</span><span class="block text-xs text-gray-600">15:35 ~ 16:05</span>
+                    </button>
+                     <button data-id="inquiry2" class="subject-button bg-gray-200 hover:bg-gray-300 p-3 rounded-lg">
+                        <span class="font-bold">탐구 2</span><span class="block text-xs text-gray-600">16:07 ~ 16:37</span>
+                    </button>
+                </div>
 
-        <!-- 과목 선택 버튼 -->
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <!-- 1교시 국어 -->
-            <button data-subject="국어" data-duration="80" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
-                <span class="font-bold text-lg">1교시 국어</span>
-                <span class="block text-sm text-slate-400">08:40 ~ 10:00 (80분)</span>
-            </button>
-            <!-- 2교시 수학 -->
-            <button data-subject="수학" data-duration="100" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
-                <span class="font-bold text-lg">2교시 수학</span>
-                <span class="block text-sm text-slate-400">10:30 ~ 12:10 (100분)</span>
-            </button>
-            <!-- 3교시 영어 -->
-            <button data-subject="영어" data-duration="70" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
-                <span class="font-bold text-lg">3교시 영어</span>
-                <span class="block text-sm text-slate-400">13:10 ~ 14:20 (70분)</span>
-            </button>
-            <!-- 4교시 -->
-            <button data-subject="한국사" data-duration="30" class="subject-button bg-slate-700 p-4 rounded-lg">
-                <span class="font-bold">4교시 한국사</span>
-                <span class="block text-xs text-slate-400">(30분)</span>
-            </button>
-            <button data-subject="탐구 1" data-duration="30" class="subject-button bg-slate-700 p-4 rounded-lg">
-                <span class="font-bold">탐구 1</span>
-                <span class="block text-xs text-slate-400">(30분)</span>
-            </button>
-            <button data-subject="탐구 2" data-duration="30" class="subject-button bg-slate-700 p-4 rounded-lg">
-                <span class="font-bold">탐구 2</span>
-                <span class="block text-xs text-slate-400">(30분)</span>
-            </button>
-            <!-- 5교시 -->
-             <button data-subject="제2외국어/한문" data-duration="40" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
-                <span class="font-bold text-lg">5교시 제2외국어/한문</span>
-                <span class="block text-sm text-slate-400">17:05 ~ 17:45 (40분)</span>
-            </button>
-        </div>
-
-        <!-- 정지 버튼 -->
-        <div class="mt-6">
-            <button id="stop-button" class="w-full bg-red-600 hover:bg-red-700 p-4 rounded-lg font-bold text-lg transition-colors">
-                타이머 정지
-            </button>
+                <div id="initial-buttons-container" class="mt-4">
+                    <button id="full-exam-mode-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg font-bold text-lg transition-colors">
+                        💯 전체 모의고사 모드
+                    </button>
+                </div>
+                
+                <div id="control-buttons-container" class="mt-6 space-y-3">
+                    <div id="single-mode-controls">
+                        <button id="pause-button" class="hidden w-full bg-amber-500 hover:bg-amber-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">일시 정지</button>
+                        <div id="paused-controls" class="hidden flex gap-4">
+                            <button id="resume-button" class="w-1/2 bg-indigo-500 hover:bg-indigo-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">재시작</button>
+                            <button id="reset-button" class="w-1/2 bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-lg font-bold text-lg transition-colors">초기화</button>
+                        </div>
+                    </div>
+                    <div id="full-exam-mode-controls" class="hidden space-y-3">
+                        <button id="skip-button" class="w-full bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">다음으로 (스킵)</button>
+                        <button id="full-exam-reset-button" class="w-full bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-lg font-bold text-lg transition-colors">처음으로 돌아가기</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // 전역 변수 선언
-        let timerInterval = null;
-        let audioContext;
+        // --- 전역 변수 및 상수 ---
+        let timerInterval = null, realTimeInterval = null;
+        let timerState = 'stopped', fullExamModeActive = false, isMuted = false;
+        let currentSession = {}, timerStartTime = 0, elapsedTimeOnPause = 0, currentScheduleIndex = -1;
+        let lastSessionEndTimeMs = 0; 
+        let currentAudio = null;
+
+        // --- 오디오 파일 URL (GitHub 호스팅 시 상대 경로로 수정 필요) ---
+        const audios = {
+            korean_warning: 'audio/006 0950 1교시 종료10분전.mp3',
+            korean_end: 'audio/007 1000 1교시 종료령.mp3',
+            math_warning: 'audio/012 1200 2교시 종료10분전.mp3',
+            math_end: 'audio/013 1210 2교시 종료령.mp3',
+            english_warning: 'audio/017 1410 3교시 종료10분전.mp3',
+            english_end: 'audio/018 1420 3교시 종료령.mp3',
+            history_warning: 'audio/023 1515 4교시 한국사 종료5분전.mp3',
+            history_end: 'audio/024 1520 4교시 한국사 종료령.mp3',
+            inquiry1_warning: 'audio/027 1555 4교시 탐구 첫째종료5분전.mp3',
+            inquiry1_end: 'audio/028 1600 4교시 탐구 첫째종료령.mp3',
+            inquiry2_warning: 'audio/030 1627 4교시 탐구 둘째종료5분전.mp3',
+            inquiry2_end: 'audio/031 1632 4교시 탐구 둘째종료령.mp3',
+        };
+
+        const subjects = {
+            korean:  { name: '1교시 국어', duration: 80, startH: 8, startM: 40, warningTime: 10, audioKey: 'korean', endDuration: 8 },
+            math:    { name: '2교시 수학', duration: 100, startH: 10, startM: 30, warningTime: 10, audioKey: 'math', endDuration: 8 },
+            english: { name: '3교시 영어', duration: 70, startH: 13, startM: 10, warningTime: 10, audioKey: 'english', endDuration: 8 },
+            history: { name: '4교시 한국사', duration: 30, startH: 14, startM: 50, warningTime: 5, audioKey: 'history', endDuration: 9.5 },
+            inquiry1:{ name: '4교시 탐구 1', duration: 30, startH: 15, startM: 35, warningTime: 5, audioKey: 'inquiry1', endDuration: 9.5 },
+            inquiry2:{ name: '4교시 탐구 2', duration: 30, startH: 16, startM: 7, warningTime: 5, audioKey: 'inquiry2', endDuration: 9.5 },
+        };
+        const fullExamSchedule = [
+            { type: 'exam', subjectId: 'korean' }, { type: 'break', name: '쉬는 시간', duration: 30 },
+            { type: 'exam', subjectId: 'math' }, { type: 'break', name: '점심 시간', duration: 60 },
+            { type: 'exam', subjectId: 'english' }, { type: 'break', name: '쉬는 시간', duration: 30 },
+            { type: 'exam', subjectId: 'history' }, { type: 'break', name: '쉬는 시간', duration: 15 },
+            { type: 'exam', subjectId: 'inquiry1' }, { type: 'break', name: '문제지 교체', duration: 2 },
+            { type: 'exam', subjectId: 'inquiry2' },
+        ];
+        const speakerIcons = {
+            unmuted: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`,
+            muted: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`
+        };
+
+        // --- DOM 요소 ---
+        const subjectDisplay = document.getElementById('subject-display'), digitalDisplay = document.getElementById('digital-display');
+        const subjectButtonsContainer = document.getElementById('subject-buttons-container'), initialButtonsContainer = document.getElementById('initial-buttons-container');
+        const controlButtonsContainer = document.getElementById('control-buttons-container'), singleModeControls = document.getElementById('single-mode-controls'), fullExamModeControls = document.getElementById('full-exam-mode-controls');
+        const pauseButton = document.getElementById('pause-button'), pausedControls = document.getElementById('paused-controls');
+        const resumeButton = document.getElementById('resume-button'), resetButton = document.getElementById('reset-button');
+        const fullExamModeButton = document.getElementById('full-exam-mode-button'), skipButton = document.getElementById('skip-button'), fullExamResetButton = document.getElementById('full-exam-reset-button');
+        const muteButton = document.getElementById('mute-button');
+        const canvas = document.getElementById('analog-clock'), ctx = canvas.getContext('2d');
+        let radius;
+
+        // --- 초기화 및 설정 ---
+        function setupCanvas() {
+            const size = Math.min(canvas.parentElement.clientWidth, 400);
+            canvas.width = size; canvas.height = size; radius = canvas.height / 2;
+            ctx.translate(radius, radius); radius = radius * 0.90;
+            startRealTimeClock();
+        }
+
+        // --- 시계 그리기 ---
+        function drawClock(timeMs) {
+            drawFace(ctx, radius);
+            drawNumbers(ctx, radius);
+            drawTime(ctx, radius, timeMs);
+        }
+        function drawFace(ctx, radius) {
+            ctx.clearRect(-radius*1.2, -radius*1.2, radius*2.4, radius*2.4);
+            ctx.beginPath(); ctx.arc(0, 0, radius, 0, 2 * Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
+            const grad = ctx.createRadialGradient(0, 0, radius * 0.95, 0, 0, radius * 1.05);
+            grad.addColorStop(0, '#e5e7eb'); grad.addColorStop(0.5, '#f9fafb'); grad.addColorStop(1, '#e5e7eb');
+            ctx.strokeStyle = grad; ctx.lineWidth = radius * 0.1; ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, radius * 0.05, 0, 2 * Math.PI); ctx.fillStyle = '#1f2937'; ctx.fill();
+        }
+        function drawNumbers(ctx, radius) {
+            ctx.font = radius * 0.15 + "px 'Inter'"; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillStyle = '#374151';
+            for (let num = 1; num <= 12; num++) {
+                const ang = num * Math.PI / 6;
+                ctx.rotate(ang); ctx.translate(0, -radius * 0.85); ctx.rotate(-ang);
+                ctx.fillText(num.toString(), 0, 0);
+                ctx.rotate(ang); ctx.translate(0, radius * 0.85); ctx.rotate(-ang);
+            }
+        }
+        function drawTime(ctx, radius, simulatedTimeMs) {
+            const totalSeconds = Math.floor(simulatedTimeMs / 1000);
+            const s = totalSeconds % 60, m = Math.floor(totalSeconds / 60) % 60, h = Math.floor(totalSeconds / 3600);
+            const secondAngle = s * (Math.PI / 30), minuteAngle = (m + s / 60) * (Math.PI / 30), hourAngle = ((h % 12) + m / 60 + s / 3600) * (Math.PI / 6);
+            drawHand(ctx, hourAngle, radius * 0.5, radius * 0.07, '#4b5563');
+            drawHand(ctx, minuteAngle, radius * 0.8, radius * 0.05, '#1f2937');
+            drawHand(ctx, secondAngle, radius * 0.9, radius * 0.02, '#ef4444');
+        }
+        function drawHand(ctx, pos, length, width, color) {
+            ctx.beginPath(); ctx.lineWidth = width; ctx.lineCap = "round"; ctx.strokeStyle = color;
+            ctx.moveTo(0, 0); ctx.rotate(pos); ctx.lineTo(0, -length); ctx.stroke(); ctx.rotate(-pos);
+        }
+
+        // --- 타이머 로직 ---
+        function updateRealTimeClock() {
+            const now = new Date();
+            const timeMs = (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) * 1000;
+            drawClock(timeMs);
+        }
+        function startRealTimeClock() { stopAllTimers(); updateRealTimeClock(); realTimeInterval = setInterval(updateRealTimeClock, 1000); }
+        function stopAllTimers() { clearInterval(timerInterval); clearInterval(realTimeInterval); timerInterval = null; realTimeInterval = null; }
+
+        function updateTimer() {
+            const elapsedMs = Date.now() - timerStartTime;
+            const remainingMs = (currentSession.duration * 60 * 1000) - elapsedMs;
+            if (remainingMs <= 0) { stopAndFinishTimer(); return; }
+            let sessionStartTimeMs = (currentSession.type === 'exam') ? (currentSession.subject.startH * 3600 + currentSession.subject.startM * 60) * 1000 : currentSession.startTimeMs;
+            const simulatedTimeMs = sessionStartTimeMs + elapsedMs;
+            drawClock(simulatedTimeMs);
+            const totalSeconds = Math.ceil(remainingMs / 1000);
+            const h = Math.floor(totalSeconds / 3600), m = Math.floor((totalSeconds % 3600) / 60), s = totalSeconds % 60;
+            digitalDisplay.textContent = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            if (currentSession.type === 'exam' && !currentSession.warningPlayed) {
+                const warningTimeMs = currentSession.subject.warningTime * 60 * 1000;
+                if (remainingMs < warningTimeMs + 500 && remainingMs > warningTimeMs - 500) {
+                    playAlarm(currentSession.subject.audioKey + '_warning');
+                    currentSession.warningPlayed = true;
+                }
+            }
+        }
         
-        // DOM 요소 가져오기
-        const timeDisplay = document.getElementById('time-display');
-        const subjectDisplay = document.getElementById('subject-display');
-        const subjectButtons = document.querySelectorAll('.subject-button');
-        const stopButton = document.getElementById('stop-button');
+        function startSession(session) {
+            stopAllTimers();
+            currentSession = session;
+            if (session.type === 'exam') {
+                currentSession.subject = subjects[session.subjectId];
+                currentSession.name = currentSession.subject.name;
+                currentSession.duration = currentSession.subject.duration;
+            } else { currentSession.startTimeMs = lastSessionEndTimeMs; }
+            currentSession.warningPlayed = false;
+            subjectDisplay.textContent = `[ ${currentSession.name} ] 진행 중...`;
+            timerStartTime = Date.now(); timerState = 'running';
+            updateTimer(); timerInterval = setInterval(updateTimer, 1000);
+            showRunningUI();
+        }
 
-        // 오디오 컨텍스트 초기화 (사용자 상호작용 시)
-        function initAudioContext() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        function startFullExamMode() { fullExamModeActive = true; currentScheduleIndex = 0; startNextSession(); }
+        function startNextSession() {
+            if (!fullExamModeActive || currentScheduleIndex >= fullExamSchedule.length) {
+                subjectDisplay.textContent = "전체 모의고사가 종료되었습니다!";
+                setTimeout(resetTimer, 5000); return;
             }
+            startSession(fullExamSchedule[currentScheduleIndex]);
         }
 
-        /**
-         * 타이머 종료 시 알림음을 재생하는 함수
-         */
-        function playEndSound() {
-            if (!audioContext) return;
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            oscillator.type = 'sine'; // 사인파
-            oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // '라' 음
-            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.5); // 0.5초간 재생
+        function pauseTimer() {
+            if (timerState !== 'running') return;
+            stopAllTimers();
+            elapsedTimeOnPause = Date.now() - timerStartTime;
+            timerState = 'paused'; subjectDisplay.textContent += " (일시 정지됨)";
+            showPausedUI();
         }
 
-        /**
-         * 타이머를 업데이트하는 함수
-         * @param {number} endTime - 타이머가 종료되는 시간 (타임스탬프)
-         */
-        function updateTimer(endTime) {
-            const now = Date.now();
-            const remainingTime = endTime - now;
-
-            if (remainingTime <= 0) {
-                clearInterval(timerInterval);
-                timeDisplay.textContent = "00:00:00";
-                subjectDisplay.textContent = "시험이 종료되었습니다!";
-                document.title = "시험 종료!";
-                playEndSound();
-                resetActiveButton();
-                return;
-            }
-
-            const totalSeconds = Math.round(remainingTime / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-
-            // 시간을 두 자리 숫자로 포맷팅
-            const formattedHours = String(hours).padStart(2, '0');
-            const formattedMinutes = String(minutes).padStart(2, '0');
-            const formattedSeconds = String(seconds).padStart(2, '0');
-            
-            const timeString = `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-            timeDisplay.textContent = timeString;
-            document.title = `${timeString} - 수능 타이머`;
+        function resumeTimer() {
+            if (timerState !== 'paused') return;
+            timerStartTime = Date.now() - elapsedTimeOnPause;
+            timerState = 'running'; subjectDisplay.textContent = `[ ${currentSession.name} ] 진행 중...`;
+            updateTimer(); timerInterval = setInterval(updateTimer, 1000);
+            showRunningUI();
         }
 
-        /**
-         * 타이머를 시작하는 함수
-         * @param {string} subject - 과목명
-         * @param {number} durationInMinutes - 시험 시간 (분)
-         */
-        function startTimer(subject, durationInMinutes) {
-            initAudioContext(); // 오디오 컨텍스트 활성화
-            
-            // 기존 타이머가 있다면 초기화
-            if (timerInterval) {
-                clearInterval(timerInterval);
-            }
-
-            subjectDisplay.textContent = `[ ${subject} ] 영역 시험 중...`;
-            const durationInMs = durationInMinutes * 60 * 1000;
-            const endTime = Date.now() + durationInMs;
-
-            updateTimer(endTime); // 즉시 한번 실행하여 1초 딜레이 없앰
-            timerInterval = setInterval(() => updateTimer(endTime), 1000);
-        }
-        
-        /**
-         * 타이머를 정지하고 초기화하는 함수
-         */
-        function stopTimer() {
-            clearInterval(timerInterval);
-            timerInterval = null;
-            timeDisplay.textContent = "00:00:00";
+        function resetTimer() {
+            stopAllTimers();
+            timerState = 'stopped'; currentSession = {};
+            timerStartTime = 0; elapsedTimeOnPause = 0; fullExamModeActive = false; currentScheduleIndex = -1;
+            lastSessionEndTimeMs = 0;
             subjectDisplay.textContent = "과목을 선택하여 타이머를 시작하세요.";
-            document.title = "수능 모의고사 타이머";
-            resetActiveButton();
+            digitalDisplay.textContent = ""; document.title = "수능 모의고사 타이머";
+            startRealTimeClock(); showInitialUI();
         }
         
-        /**
-         * 활성화된 버튼 스타일을 초기화하는 함수
-         */
-        function resetActiveButton() {
-            subjectButtons.forEach(btn => btn.classList.remove('active'));
+        function stopAndFinishTimer() {
+            stopAllTimers();
+            timerState = 'stopped';
+            subjectDisplay.textContent = `[ ${currentSession.name} ] 종료!`;
+            digitalDisplay.textContent = "00:00:00";
+            if (currentSession.type === 'exam') {
+                playAlarm(currentSession.subject.audioKey + '_end', currentSession.subject.endDuration);
+                lastSessionEndTimeMs = (currentSession.subject.startH * 3600 + currentSession.subject.startM * 60 + currentSession.subject.duration * 60) * 1000;
+            } else { lastSessionEndTimeMs = currentSession.startTimeMs + (currentSession.duration * 60 * 1000); }
+            if (fullExamModeActive) {
+                const nextSessionIndex = currentScheduleIndex + 1;
+                if (nextSessionIndex < fullExamSchedule.length) {
+                    const nextSession = fullExamSchedule[nextSessionIndex];
+                    const nextSessionName = nextSession.type === 'exam' ? subjects[nextSession.subjectId].name : nextSession.name;
+                    subjectDisplay.textContent = `다음은 [ ${nextSessionName} ] 입니다. (${nextSession.duration}분)`;
+                }
+                currentScheduleIndex++;
+                setTimeout(startNextSession, 3000);
+            } else { setTimeout(resetTimer, 3000); }
         }
+        
+        function playAlarm(audioType, durationLimit = null) {
+            if (isMuted) return;
+            if (currentAudio) { currentAudio.pause(); }
+            const audioSrc = audios[audioType];
+            if (audioSrc) {
+                currentAudio = new Audio(audioSrc);
+                currentAudio.play().catch(e => console.error("오디오 재생 오류:", e));
+                if (durationLimit) {
+                    setTimeout(() => {
+                        if (currentAudio) {
+                            currentAudio.pause();
+                            currentAudio.currentTime = 0;
+                        }
+                    }, durationLimit * 1000);
+                }
+            }
+        }
+        
+        function skipSession() { if (fullExamModeActive) stopAndFinishTimer(); }
 
-        // 과목 버튼에 이벤트 리스너 추가
-        subjectButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const subject = button.dataset.subject;
-                const duration = parseInt(button.dataset.duration, 10);
-                
-                resetActiveButton();
-                button.classList.add('active');
-                
-                startTimer(subject, duration);
-            });
+        // --- UI 상태 변경 ---
+        function showInitialUI() {
+            subjectButtonsContainer.classList.remove('hidden');
+            initialButtonsContainer.classList.remove('hidden');
+            controlButtonsContainer.classList.remove('hidden');
+            singleModeControls.classList.add('hidden');
+            fullExamModeControls.classList.add('hidden');
+        }
+        function showRunningUI() {
+            subjectButtonsContainer.classList.add('hidden');
+            initialButtonsContainer.classList.add('hidden');
+            controlButtonsContainer.classList.remove('hidden');
+            if (fullExamModeActive) {
+                singleModeControls.classList.add('hidden');
+                fullExamModeControls.classList.remove('hidden');
+            } else {
+                singleModeControls.classList.remove('hidden');
+                pauseButton.classList.remove('hidden');
+                pausedControls.classList.add('hidden');
+                fullExamModeControls.classList.add('hidden');
+            }
+        }
+        function showPausedUI() { pauseButton.classList.add('hidden'); pausedControls.classList.remove('hidden'); }
+        function updateMuteButtonUI() { muteButton.innerHTML = isMuted ? speakerIcons.muted : speakerIcons.unmuted; }
+
+        // --- 이벤트 리스너 ---
+        document.querySelectorAll('.subject-button').forEach(button => {
+            button.addEventListener('click', () => startSession({ type: 'exam', subjectId: button.dataset.id }));
         });
+        fullExamModeButton.addEventListener('click', startFullExamMode);
+        pauseButton.addEventListener('click', pauseTimer);
+        resumeButton.addEventListener('click', resumeTimer);
+        resetButton.addEventListener('click', resetTimer);
+        skipButton.addEventListener('click', skipSession);
+        fullExamResetButton.addEventListener('click', resetTimer);
+        muteButton.addEventListener('click', () => { isMuted = !isMuted; updateMuteButtonUI(); });
+        window.addEventListener('resize', setupCanvas);
 
-        // 정지 버튼에 이벤트 리스너 추가
-        stopButton.addEventListener('click', stopTimer);
+        // --- 최초 실행 ---
+        setupCanvas();
+        showInitialUI();
+        updateMuteButtonUI();
     </script>
 </body>
 </html>

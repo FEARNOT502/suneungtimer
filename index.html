@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수능 모의고사 타이머 (최종 검토)</title>
+    <title>수능 모의고사 타이머</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -44,10 +44,10 @@
                      <button id="mute-button" class="absolute top-1/2 right-0 -translate-y-1/2 p-2 rounded-full hover:bg-gray-200 transition-colors">
                         <!-- Speaker Icon SVG will be injected here by JS -->
                     </button>
-                    <p id="subject-display" class="text-gray-500 mt-2 text-lg h-14 md:h-7">과목을 선택하여 타이머를 시작하세요.</p>
+                    <p id="subject-display" class="text-gray-500 mt-2 text-lg min-h-[3.5rem] md:min-h-[1.75rem]">과목을 선택하여 타이머를 시작하세요.</p>
                 </header>
                 <canvas id="analog-clock"></canvas>
-                <div id="digital-display" class="text-center text-5xl font-mono tracking-tighter mt-4 text-gray-700 h-12"></div>
+                <div id="digital-display" class="text-center text-4xl sm:text-5xl font-mono tracking-tighter mt-4 text-gray-700 h-12"></div>
             </div>
 
             <!-- 우측: 컨트롤 패널 -->
@@ -153,11 +153,20 @@
         let radius;
 
         // --- 초기화 및 설정 ---
-        function setupCanvas() {
+        function resizeAndDrawCanvas() {
             const size = Math.min(canvas.parentElement.clientWidth, 400);
-            canvas.width = size; canvas.height = size; radius = canvas.height / 2;
-            ctx.translate(radius, radius); radius = radius * 0.90;
-            startRealTimeClock();
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Reset transformation matrix and re-center
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.translate(size / 2, size / 2);
+            
+            radius = (size / 2) * 0.90;
+
+            if (timerState === 'stopped') {
+                updateRealTimeClock();
+            }
         }
 
         // --- 시계 그리기 ---
@@ -167,6 +176,7 @@
             drawTime(ctx, radius, timeMs);
         }
         function drawFace(ctx, radius) {
+            if (!radius || radius <= 0) return;
             ctx.clearRect(-radius*1.2, -radius*1.2, radius*2.4, radius*2.4);
             ctx.beginPath(); ctx.arc(0, 0, radius, 0, 2 * Math.PI); ctx.fillStyle = '#ffffff'; ctx.fill();
             const grad = ctx.createRadialGradient(0, 0, radius * 0.95, 0, 0, radius * 1.05);
@@ -175,6 +185,7 @@
             ctx.beginPath(); ctx.arc(0, 0, radius * 0.05, 0, 2 * Math.PI); ctx.fillStyle = '#1f2937'; ctx.fill();
         }
         function drawNumbers(ctx, radius) {
+            if (!radius || radius <= 0) return;
             ctx.font = radius * 0.15 + "px 'Inter'"; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillStyle = '#374151';
             for (let num = 1; num <= 12; num++) {
                 const ang = num * Math.PI / 6;
@@ -184,6 +195,7 @@
             }
         }
         function drawTime(ctx, radius, simulatedTimeMs) {
+            if (!radius || radius <= 0) return;
             const totalSeconds = Math.floor(simulatedTimeMs / 1000);
             const s = totalSeconds % 60, m = Math.floor(totalSeconds / 60) % 60, h = Math.floor(totalSeconds / 3600);
             const secondAngle = s * (Math.PI / 30), minuteAngle = (m + s / 60) * (Math.PI / 30), hourAngle = ((h % 12) + m / 60 + s / 3600) * (Math.PI / 6);
@@ -351,10 +363,12 @@
         skipButton.addEventListener('click', skipSession);
         fullExamResetButton.addEventListener('click', resetTimer);
         muteButton.addEventListener('click', () => { isMuted = !isMuted; updateMuteButtonUI(); });
-        window.addEventListener('resize', setupCanvas);
+        
+        window.addEventListener('resize', resizeAndDrawCanvas);
+        window.addEventListener('load', resizeAndDrawCanvas);
+
 
         // --- 최초 실행 ---
-        setupCanvas();
         showInitialUI();
         updateMuteButtonUI();
     </script>

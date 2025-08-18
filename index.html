@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수능 모의고사 타이머</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+        /* 커스텀 스타일 추가 */
+        .timer-display {
+            font-weight: 900;
+            font-size: clamp(3rem, 15vw, 6rem);
+            letter-spacing: -0.05em;
+        }
+        .subject-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .subject-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .subject-button.active {
+            background-color: #0891b2; /* Tailwind cyan-600 */
+            color: white;
+            transform: translateY(0px);
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto bg-slate-800 rounded-2xl shadow-2xl p-6 md:p-8">
+        
+        <!-- 헤더 -->
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-cyan-400">수능 모의고사 타이머</h1>
+            <p id="subject-display" class="text-slate-400 mt-2 text-lg h-7">과목을 선택하여 타이머를 시작하세요.</p>
+        </header>
+
+        <!-- 타이머 디스플레이 -->
+        <div class="my-8 text-center">
+            <div id="time-display" class="timer-display text-slate-100">00:00:00</div>
+        </div>
+
+        <!-- 과목 선택 버튼 -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <!-- 1교시 국어 -->
+            <button data-subject="국어" data-duration="80" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
+                <span class="font-bold text-lg">1교시 국어</span>
+                <span class="block text-sm text-slate-400">08:40 ~ 10:00 (80분)</span>
+            </button>
+            <!-- 2교시 수학 -->
+            <button data-subject="수학" data-duration="100" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
+                <span class="font-bold text-lg">2교시 수학</span>
+                <span class="block text-sm text-slate-400">10:30 ~ 12:10 (100분)</span>
+            </button>
+            <!-- 3교시 영어 -->
+            <button data-subject="영어" data-duration="70" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
+                <span class="font-bold text-lg">3교시 영어</span>
+                <span class="block text-sm text-slate-400">13:10 ~ 14:20 (70분)</span>
+            </button>
+            <!-- 4교시 -->
+            <button data-subject="한국사" data-duration="30" class="subject-button bg-slate-700 p-4 rounded-lg">
+                <span class="font-bold">4교시 한국사</span>
+                <span class="block text-xs text-slate-400">(30분)</span>
+            </button>
+            <button data-subject="탐구 1" data-duration="30" class="subject-button bg-slate-700 p-4 rounded-lg">
+                <span class="font-bold">탐구 1</span>
+                <span class="block text-xs text-slate-400">(30분)</span>
+            </button>
+            <button data-subject="탐구 2" data-duration="30" class="subject-button bg-slate-700 p-4 rounded-lg">
+                <span class="font-bold">탐구 2</span>
+                <span class="block text-xs text-slate-400">(30분)</span>
+            </button>
+            <!-- 5교시 -->
+             <button data-subject="제2외국어/한문" data-duration="40" class="subject-button col-span-2 md:col-span-3 bg-slate-700 p-4 rounded-lg">
+                <span class="font-bold text-lg">5교시 제2외국어/한문</span>
+                <span class="block text-sm text-slate-400">17:05 ~ 17:45 (40분)</span>
+            </button>
+        </div>
+
+        <!-- 정지 버튼 -->
+        <div class="mt-6">
+            <button id="stop-button" class="w-full bg-red-600 hover:bg-red-700 p-4 rounded-lg font-bold text-lg transition-colors">
+                타이머 정지
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수 선언
+        let timerInterval = null;
+        let audioContext;
+        
+        // DOM 요소 가져오기
+        const timeDisplay = document.getElementById('time-display');
+        const subjectDisplay = document.getElementById('subject-display');
+        const subjectButtons = document.querySelectorAll('.subject-button');
+        const stopButton = document.getElementById('stop-button');
+
+        // 오디오 컨텍스트 초기화 (사용자 상호작용 시)
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        /**
+         * 타이머 종료 시 알림음을 재생하는 함수
+         */
+        function playEndSound() {
+            if (!audioContext) return;
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.type = 'sine'; // 사인파
+            oscillator.frequency.setValueAtTime(880, audioContext.currentTime); // '라' 음
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5); // 0.5초간 재생
+        }
+
+        /**
+         * 타이머를 업데이트하는 함수
+         * @param {number} endTime - 타이머가 종료되는 시간 (타임스탬프)
+         */
+        function updateTimer(endTime) {
+            const now = Date.now();
+            const remainingTime = endTime - now;
+
+            if (remainingTime <= 0) {
+                clearInterval(timerInterval);
+                timeDisplay.textContent = "00:00:00";
+                subjectDisplay.textContent = "시험이 종료되었습니다!";
+                document.title = "시험 종료!";
+                playEndSound();
+                resetActiveButton();
+                return;
+            }
+
+            const totalSeconds = Math.round(remainingTime / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            // 시간을 두 자리 숫자로 포맷팅
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(seconds).padStart(2, '0');
+            
+            const timeString = `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+            timeDisplay.textContent = timeString;
+            document.title = `${timeString} - 수능 타이머`;
+        }
+
+        /**
+         * 타이머를 시작하는 함수
+         * @param {string} subject - 과목명
+         * @param {number} durationInMinutes - 시험 시간 (분)
+         */
+        function startTimer(subject, durationInMinutes) {
+            initAudioContext(); // 오디오 컨텍스트 활성화
+            
+            // 기존 타이머가 있다면 초기화
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+
+            subjectDisplay.textContent = `[ ${subject} ] 영역 시험 중...`;
+            const durationInMs = durationInMinutes * 60 * 1000;
+            const endTime = Date.now() + durationInMs;
+
+            updateTimer(endTime); // 즉시 한번 실행하여 1초 딜레이 없앰
+            timerInterval = setInterval(() => updateTimer(endTime), 1000);
+        }
+        
+        /**
+         * 타이머를 정지하고 초기화하는 함수
+         */
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            timeDisplay.textContent = "00:00:00";
+            subjectDisplay.textContent = "과목을 선택하여 타이머를 시작하세요.";
+            document.title = "수능 모의고사 타이머";
+            resetActiveButton();
+        }
+        
+        /**
+         * 활성화된 버튼 스타일을 초기화하는 함수
+         */
+        function resetActiveButton() {
+            subjectButtons.forEach(btn => btn.classList.remove('active'));
+        }
+
+        // 과목 버튼에 이벤트 리스너 추가
+        subjectButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const subject = button.dataset.subject;
+                const duration = parseInt(button.dataset.duration, 10);
+                
+                resetActiveButton();
+                button.classList.add('active');
+                
+                startTimer(subject, duration);
+            });
+        });
+
+        // 정지 버튼에 이벤트 리스너 추가
+        stopButton.addEventListener('click', stopTimer);
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수능 모의고사 온라인 타이머</title>
+    <title>수능 모의고사 타이머</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,6 +97,9 @@
                         <button id="skip-button" class="w-full bg-green-500 hover:bg-green-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">다음으로 (스킵)</button>
                         <button id="full-exam-reset-button" class="w-full bg-gray-700 hover:bg-gray-800 text-white p-4 rounded-lg font-bold text-lg transition-colors">처음으로 돌아가기</button>
                     </div>
+                    <div id="end-of-exam-controls" class="hidden">
+                        <button id="return-to-start-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-lg font-bold text-lg transition-colors">처음으로 돌아가기</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -183,6 +186,7 @@
         const fullExamModeButton = document.getElementById('full-exam-mode-button'), skipButton = document.getElementById('skip-button'), fullExamResetButton = document.getElementById('full-exam-reset-button');
         const pauseButton = document.getElementById('pause-button'), pausedControls = document.getElementById('paused-controls');
         const resumeButton = document.getElementById('resume-button'), resetButton = document.getElementById('reset-button');
+        const endOfExamControls = document.getElementById('end-of-exam-controls'), returnToStartButton = document.getElementById('return-to-start-button');
         // 학습 모드
         const totalStudyTimeDisplay = document.getElementById('total-study-time-display'), studyTimerDisplay = document.getElementById('study-timer-display');
         const studyTimerToggle = document.getElementById('study-timer-toggle'), viewLogButton = document.getElementById('view-log-button');
@@ -312,12 +316,15 @@
         function stopAndFinishTimer() {
             stopAllTimers();
             timerState = 'stopped';
-            subjectDisplay.textContent = `[ ${currentSession.name} ] 종료!`;
             digitalDisplay.textContent = "00:00:00";
             if (currentSession.type === 'exam') {
+                subjectDisplay.textContent = `${currentSession.name} 시험이 종료되었습니다.`;
                 playAlarm(currentSession.subject.audioKey + '_end', currentSession.subject.endDuration);
                 lastSessionEndTimeMs = (currentSession.subject.startH * 3600 + currentSession.subject.startM * 60 + currentSession.subject.duration * 60) * 1000;
-            } else { lastSessionEndTimeMs = currentSession.startTimeMs + (currentSession.duration * 60 * 1000); }
+            } else { 
+                subjectDisplay.textContent = `[ ${currentSession.name} ] 종료!`;
+                lastSessionEndTimeMs = currentSession.startTimeMs + (currentSession.duration * 60 * 1000); 
+            }
             if (fullExamModeActive) {
                 const nextSessionIndex = currentScheduleIndex + 1;
                 if (nextSessionIndex < fullExamSchedule.length) {
@@ -327,7 +334,9 @@
                 }
                 currentScheduleIndex++;
                 setTimeout(startNextSession, 3000);
-            } else { setTimeout(resetTimer, 3000); }
+            } else { 
+                showEndOfSingleExamUI();
+            }
         }
         function skipSession() { if (fullExamModeActive) stopAndFinishTimer(); }
 
@@ -441,6 +450,8 @@
             document.getElementById('control-buttons-container').classList.add('hidden');
             document.getElementById('single-mode-controls').classList.add('hidden');
             document.getElementById('full-exam-mode-controls').classList.add('hidden');
+            document.getElementById('end-of-exam-controls').classList.add('hidden');
+            examModePanel.classList.remove('hidden');
         }
         function showRunningUI() {
             examModePanel.classList.add('hidden');
@@ -454,8 +465,14 @@
                 pausedControls.classList.add('hidden');
                 document.getElementById('full-exam-mode-controls').classList.add('hidden');
             }
+            document.getElementById('end-of-exam-controls').classList.add('hidden');
         }
         function showPausedUI() { pauseButton.classList.add('hidden'); pausedControls.classList.remove('hidden'); }
+        function showEndOfSingleExamUI() {
+            document.getElementById('single-mode-controls').classList.add('hidden');
+            document.getElementById('full-exam-mode-controls').classList.add('hidden');
+            document.getElementById('end-of-exam-controls').classList.remove('hidden');
+        }
         function updateMuteButtonUI() { muteButton.innerHTML = isMuted ? speakerIcons.muted : speakerIcons.unmuted; }
         
         // --- 이벤트 리스너 ---
@@ -468,6 +485,7 @@
         resetButton.addEventListener('click', resetTimer);
         skipButton.addEventListener('click', skipSession);
         fullExamResetButton.addEventListener('click', resetTimer);
+        returnToStartButton.addEventListener('click', resetTimer);
         muteButton.addEventListener('click', () => { isMuted = !isMuted; updateMuteButtonUI(); });
         
         examModeTab.addEventListener('click', () => {
@@ -513,7 +531,7 @@
         window.addEventListener('load', () => {
             resizeAndDrawCanvas();
             loadTotalStudyTime();
-            startRealTimeClock(); // 이 부분이 추가되었습니다.
+            startRealTimeClock();
         });
 
         // --- 최초 실행 ---

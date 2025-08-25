@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>수능 모의고사 타이머</title>
+    <title>수능 모의고사 타이머 (기능 통합 및 오류 수정)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -85,7 +85,7 @@
                 </div>
                 
                 <!-- 공용 컨트롤 버튼 -->
-                <div id="control-buttons-container" class="mt-6 space-y-3">
+                <div id="control-buttons-container" class="mt-6 space-y-3 hidden">
                     <div id="single-mode-controls">
                          <button id="pause-button" class="hidden w-full bg-amber-500 hover:bg-amber-600 text-white p-4 rounded-lg font-bold text-lg transition-colors">일시 정지</button>
                         <div id="paused-controls" class="hidden flex gap-4">
@@ -321,6 +321,7 @@
                 subjectDisplay.textContent = `${currentSession.name} 시험이 종료되었습니다.`;
                 playAlarm(currentSession.subject.audioKey + '_end', currentSession.subject.endDuration);
                 lastSessionEndTimeMs = (currentSession.subject.startH * 3600 + currentSession.subject.startM * 60 + currentSession.subject.duration * 60) * 1000;
+                saveStudyTime(currentSession.duration * 60); // 시험 시간 기록
             } else { 
                 subjectDisplay.textContent = `[ ${currentSession.name} ] 종료!`;
                 lastSessionEndTimeMs = currentSession.startTimeMs + (currentSession.duration * 60 * 1000); 
@@ -506,6 +507,7 @@
             examModeTab.classList.add('text-gray-500');
             studyModePanel.classList.remove('hidden');
             examModePanel.classList.add('hidden');
+            document.getElementById('control-buttons-container').classList.add('hidden'); // UI 버그 수정
             resetTimer();
             digitalDisplay.textContent = "";
             subjectDisplay.textContent = "일반 학습 타이머";
